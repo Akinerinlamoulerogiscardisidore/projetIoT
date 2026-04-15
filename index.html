@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SIL · Sentinelle Intelligente de Laboratoire</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════
+     HEADER
+════════════════════════════════════════════ -->
+<header class="header">
+  <div class="header-left">
+    <div class="sil-mark">SIL</div>
+    <div class="header-meta">
+      <span class="header-title">Sentinelle Intelligente de Laboratoire</span>
+      <span class="header-sub">Arduino MKR WiFi 1010 · MKR IoT Carrier · Firebase RTDB</span>
+    </div>
+  </div>
+
+  <nav class="header-right" aria-label="Statuts système">
+    <div class="hdr-pill" id="firebase-status" role="status" aria-live="polite">
+      <span class="hdr-pill-dot" id="firebase-dot"></span>
+      <span id="firebase-label">Connexion…</span>
+    </div>
+
+    <div class="hdr-pill hdr-pill--status" id="global-status" role="status">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+      </svg>
+      <span id="global-status-label">Initialisation</span>
+    </div>
+
+    <div class="hdr-clock" id="clock" aria-label="Heure actuelle"></div>
+
+    <button class="theme-btn" id="theme-toggle" aria-label="Changer le thème">
+      <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/>
+        <line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/>
+        <line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+      </svg>
+      <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+      </svg>
+    </button>
+  </nav>
+</header>
+
+
+<!-- ════════════════════════════════════════════
+     MAIN LAYOUT
+════════════════════════════════════════════ -->
+<main class="layout">
+
+  <!-- ═══════════════════════════════
+       COLONNE GAUCHE — Données
+  ═══════════════════════════════ -->
+  <section class="col-data" aria-label="Données environnementales">
+
+    <div class="section-label">
+      <span>Mesures environnementales</span>
+      <span class="ts-label">MAJ : <span id="last-update-time">–</span></span>
+    </div>
+
+    <div class="sensor-grid" role="list">
+
+      <!-- Température -->
+      <article class="sensor-card" id="card-temp" role="listitem">
+        <div class="sc-head">
+          <div class="sc-icon sc-icon--temp" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26A4.5 4.5 0 1 0 14 14.76z"/>
+            </svg>
+          </div>
+          <div class="sc-label-group">
+            <span class="sc-label">Température</span>
+            <span class="sc-unit">°C</span>
+          </div>
+          <div class="sc-dot" id="temp-dot"></div>
+        </div>
+        <div class="sc-value" id="temp-value">–</div>
+        <div class="sc-foot">
+          <span class="sc-trend" id="temp-trend"></span>
+          <span class="sc-note">Seuil auto : 30 °C</span>
+        </div>
+      </article>
+
+      <!-- Humidité -->
+      <article class="sensor-card" id="card-hum" role="listitem">
+        <div class="sc-head">
+          <div class="sc-icon sc-icon--hum" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
+            </svg>
+          </div>
+          <div class="sc-label-group">
+            <span class="sc-label">Humidité</span>
+            <span class="sc-unit">%</span>
+          </div>
+          <div class="sc-dot" id="hum-dot"></div>
+        </div>
+        <div class="sc-value" id="hum-value">–</div>
+        <div class="sc-foot">
+          <span class="sc-trend" id="hum-trend"></span>
+          <span class="sc-note">Seuils : 65 % / 80 %</span>
+        </div>
+      </article>
+
+      <!-- Pression -->
+      <article class="sensor-card" id="card-pres" role="listitem">
+        <div class="sc-head">
+          <div class="sc-icon sc-icon--pres" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+          </div>
+          <div class="sc-label-group">
+            <span class="sc-label">Pression</span>
+            <span class="sc-unit">hPa</span>
+          </div>
+          <div class="sc-dot" id="pres-dot"></div>
+        </div>
+        <div class="sc-value" id="pres-value">–</div>
+        <div class="sc-foot">
+          <span class="sc-trend" id="pres-trend"></span>
+          <span class="sc-note">Std : ~1013 hPa</span>
+        </div>
+      </article>
+
+      <!-- Luminosité -->
+      <article class="sensor-card" id="card-lux" role="listitem">
+        <div class="sc-head">
+          <div class="sc-icon sc-icon--lux" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="5"/>
+              <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+              <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+            </svg>
+          </div>
+          <div class="sc-label-group">
+            <span class="sc-label">Luminosité</span>
+            <span class="sc-unit">lux</span>
+          </div>
+          <div class="sc-dot" id="lux-dot"></div>
+        </div>
+        <div class="sc-value" id="lux-value">–</div>
+        <div class="sc-foot">
+          <span class="sc-trend" id="lux-trend"></span>
+          <span class="sc-note">Capteur APDS9960</span>
+        </div>
+      </article>
+
+      <!-- Qualité de l'air -->
+      <article class="sensor-card sensor-card--wide" id="card-iaq" role="listitem">
+        <div class="sc-head">
+          <div class="sc-icon sc-icon--iaq" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 18c-4.51 2-5-2-7-2"/><path d="M14 18c4.51 2 5-2 7-2"/>
+              <path d="M12 2a4 4 0 0 1 4 4c0 3-2 4-4 8-2-4-4-5-4-8a4 4 0 0 1 4-4z"/>
+            </svg>
+          </div>
+          <div class="sc-label-group">
+            <span class="sc-label">Qualité de l'air</span>
+            <span class="sc-unit">IAQ</span>
+          </div>
+          <div class="iaq-badge" id="iaq-badge">–</div>
+          <div class="sc-dot" id="iaq-dot"></div>
+        </div>
+        <div class="iaq-body">
+          <div class="iaq-main">
+            <div class="sc-value" id="iaq-value">–</div>
+            <span class="iaq-label-main">Index IAQ</span>
+          </div>
+          <div class="iaq-co2">
+            <div class="co2-value" id="co2-value">–</div>
+            <span class="iaq-label-sub">CO₂ éq. (ppm)</span>
+          </div>
+        </div>
+        <div class="sc-foot">
+          <span class="sc-note iaq-scale">0–50 Excellent · 51–100 Bon · 101–150 Modéré · &gt;150 Dégradé</span>
+        </div>
+      </article>
+
+    </div><!-- /sensor-grid -->
+
+    <!-- Graphique -->
+    <div class="section-label section-label--mt">
+      <span>Évolution historique</span>
+      <div class="chart-legend">
+        <span class="leg-dot leg-dot--temp"></span><span>Température</span>
+        <span class="leg-dot leg-dot--hum"></span><span>Humidité</span>
+      </div>
+    </div>
+
+    <div class="chart-wrap">
+      <canvas id="envChart" role="img" aria-label="Courbe température et humidité"></canvas>
+      <div class="chart-empty" id="chart-empty">En attente de données…</div>
+    </div>
+
+  </section>
+
+
+  <!-- ═══════════════════════════════
+       COLONNE DROITE — Contrôles
+  ═══════════════════════════════ -->
+  <aside class="col-ctrl" aria-label="Contrôle et supervision">
+
+    <!-- ─── Mode de fonctionnement ─── -->
+    <div class="mode-panel">
+      <div class="mode-panel-top">
+        <span class="section-label-inline">Mode de fonctionnement</span>
+        <span class="mode-src-tag" id="mode-source-tag">Cloud</span>
+      </div>
+
+      <div class="mode-switch" id="mode-switch" role="group" aria-label="Sélection du mode">
+        <button class="mode-btn" id="btn-mode-auto" data-mode="auto" aria-pressed="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.07 4.93l-1.41 1.41M6.34 17.66l-1.41 1.41M19.07 19.07l-1.41-1.41M6.34 6.34L4.93 4.93M21 12h-2M5 12H3M12 21v-2M12 5V3"/>
+          </svg>
+          AUTO
+        </button>
+        <button class="mode-btn" id="btn-mode-manual" data-mode="manual" aria-pressed="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
+            <path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0"/>
+            <path d="M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v2"/>
+            <path d="M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v8"/>
+            <path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/>
+          </svg>
+          MANUEL
+        </button>
+      </div>
+
+      <p class="mode-desc" id="mode-desc">
+        Le Dashboard surveille les capteurs et pilote les actionneurs de façon autonome.
+      </p>
+    </div>
+
+    <!-- ─── État actionneurs ─── -->
+    <div class="section-label">État des actionneurs</div>
+
+    <div class="act-strip">
+      <div class="act-row" id="act-lamp">
+        <div class="act-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="9" y1="18" x2="15" y2="18"/><line x1="10" y1="22" x2="14" y2="22"/>
+            <path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.99 4.99 0 0 0 18 8 6 6 0 0 0 6 8c0 2 1 3.5 2.5 4.5.76.76 1.23 1.52 1.41 2.5"/>
+          </svg>
+        </div>
+        <div class="act-body">
+          <span class="act-name">Lampe</span>
+          <span class="act-state" id="lamp-value">–</span>
+        </div>
+        <div class="act-led" id="lamp-led"></div>
+      </div>
+
+      <div class="act-row" id="act-fan">
+        <div class="act-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 12c0-2.21 1.79-4 4-4s4 1.79 4 4c0 1.11-.45 2.11-1.18 2.83"/>
+            <path d="M12 12c0 2.21-1.79 4-4 4S4 14.21 4 12c0-1.11.45-2.11 1.18-2.83"/>
+            <path d="M12 12c-2.21 0-4-1.79-4-4s1.79-4 4-4c1.11 0 2.11.45 2.83 1.18"/>
+            <path d="M12 12c2.21 0 4 1.79 4 4s-1.79 4-4 4c-1.11 0-2.11-.45-2.83-1.18"/>
+            <circle cx="12" cy="12" r="1.5"/>
+          </svg>
+        </div>
+        <div class="act-body">
+          <span class="act-name">Ventilateur</span>
+          <span class="act-state" id="fan-value">–</span>
+        </div>
+        <div class="act-led" id="fan-led"></div>
+      </div>
+
+      <div class="act-row" id="act-power">
+        <div class="act-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/>
+          </svg>
+        </div>
+        <div class="act-body">
+          <span class="act-name">Alimentation</span>
+          <span class="act-state" id="power-value">–</span>
+        </div>
+        <div class="act-led" id="power-led"></div>
+      </div>
+    </div>
+
+    <!-- ─── Commandes manuelles ─── -->
+    <div class="section-label">Commandes</div>
+
+    <div class="cmd-panel" id="cmd-panel">
+      <!-- Overlay verrou AUTO -->
+      <div class="auto-overlay" id="auto-lock-overlay" aria-live="polite">
+        <div class="auto-overlay-inner">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+          <strong>Mode AUTO actif</strong>
+          <span>Le Dashboard pilote automatiquement les actionneurs. Passez en mode Manuel pour prendre le contrôle.</span>
+        </div>
+      </div>
+
+      <!-- Lampe -->
+      <div class="cmd-row">
+        <span class="cmd-label">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <line x1="9" y1="18" x2="15" y2="18"/><line x1="10" y1="22" x2="14" y2="22"/>
+            <path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.99 4.99 0 0 0 18 8 6 6 0 0 0 6 8c0 2 1 3.5 2.5 4.5.76.76 1.23 1.52 1.41 2.5"/>
+          </svg>
+          Lampe
+        </span>
+        <div class="cmd-btns">
+          <button class="cmd-btn cmd-btn--off" id="btn-lampe-off" aria-label="Éteindre la lampe">OFF</button>
+          <button class="cmd-btn cmd-btn--on"  id="btn-lampe-on"  aria-label="Allumer la lampe">ON</button>
+        </div>
+      </div>
+      <div class="cmd-sep" role="separator"></div>
+
+      <!-- Ventilateur -->
+      <div class="cmd-row">
+        <span class="cmd-label">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M12 12c0-2.21 1.79-4 4-4s4 1.79 4 4c0 1.11-.45 2.11-1.18 2.83"/>
+            <path d="M12 12c0 2.21-1.79 4-4 4S4 14.21 4 12c0-1.11.45-2.11 1.18-2.83"/>
+            <path d="M12 12c-2.21 0-4-1.79-4-4s1.79-4 4-4c1.11 0 2.11.45 2.83 1.18"/>
+            <path d="M12 12c2.21 0 4 1.79 4 4s-1.79 4-4 4c-1.11 0-2.11-.45-2.83-1.18"/>
+            <circle cx="12" cy="12" r="1.5"/>
+          </svg>
+          Ventilateur
+        </span>
+        <div class="cmd-btns">
+          <button class="cmd-btn cmd-btn--off" id="btn-fan-off" aria-label="Arrêter le ventilateur">OFF</button>
+          <button class="cmd-btn cmd-btn--on"  id="btn-fan-on"  aria-label="Démarrer le ventilateur">ON</button>
+        </div>
+      </div>
+      <div class="cmd-sep" role="separator"></div>
+
+      <!-- Alimentation -->
+      <div class="cmd-row">
+        <span class="cmd-label">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/>
+          </svg>
+          Alimentation
+        </span>
+        <div class="cmd-btns cmd-btns--power">
+          <button class="power-btn" id="btn-power-toggle" data-active="false" aria-label="Basculer l'alimentation">
+            <span class="power-ring"></span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+              <path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="cmd-feedback" id="cmd-feedback" role="alert" aria-live="assertive"></div>
+    </div>
+
+
+    <!-- ─── Alertes ─── -->
+    <div class="section-label">
+      <span>Alertes actives</span>
+      <span class="alert-badge" id="alert-count" aria-live="polite"></span>
+    </div>
+
+    <div class="alerts-panel" id="alerts-panel" role="list" aria-label="Alertes système">
+      <div class="panel-empty" id="alerts-empty">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+          <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        <span>Aucune alerte active</span>
+      </div>
+    </div>
+
+    <!-- ─── Historique ─── -->
+    <div class="section-label">
+      <span>Historique</span>
+      <button class="clear-btn" id="btn-clear-history" title="Effacer l'historique" aria-label="Effacer l'historique">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <polyline points="3 6 5 6 21 6"/>
+          <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+          <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="history-panel" id="history-panel" role="log" aria-live="polite" aria-label="Journal des événements">
+      <div class="panel-empty" id="history-empty">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+        </svg>
+        <span>Aucun événement</span>
+      </div>
+    </div>
+
+  </aside>
+</main>
+
+
+<!-- ════════════════════════════════════════════
+     FOOTER & TOAST
+════════════════════════════════════════════ -->
+<footer class="footer">
+  <span>SIL · Sentinelle Intelligente de Laboratoire</span>
+  <span aria-hidden="true">·</span>
+  <span>MKR WiFi 1010 · BME688 · APDS9960</span>
+  <span aria-hidden="true">·</span>
+  <span id="footer-year"></span>
+</footer>
+
+<div class="toast" id="toast" role="alert" aria-live="assertive" aria-atomic="true"></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
