@@ -116,7 +116,7 @@ function updateConnStatus(ok) {
   if (!pill) return;
   pill.classList.toggle('connected',    ok);
   pill.classList.toggle('disconnected', !ok);
-  if (label) label.textContent = ok ? 'Firebase OK' : 'Déconnecté';
+  if (label) label.textContent = ok ? 'Connexion réussie' : 'Déconnecté';
 
   // Badge LIVE 5G : opacité réduite si déconnecté
   const badge = el('badge-live');
